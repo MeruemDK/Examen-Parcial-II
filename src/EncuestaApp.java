@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 public class EncuestaApp extends JFrame {
     private Connection conexion;
@@ -13,6 +14,8 @@ public class EncuestaApp extends JFrame {
     private JLabel preguntaLabel;
     private int preguntaActual = 0;
 
+    // Lista para almacenar las respuestas del usuario
+    private ArrayList<String> respuestasUsuario = new ArrayList<>();
 
     private String[] preguntas = {
             "¿Cuál es tu videojuego favorito?",
@@ -21,33 +24,26 @@ public class EncuestaApp extends JFrame {
             "¿Qué ciudad te gustaría visitar?"
     };
 
-
     public EncuestaApp() {
         super("Encuesta Interactiva");
-
 
         setSize(400, 200);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-
         preguntaLabel = new JLabel(preguntas[preguntaActual]);
         respuestaField = new JTextField();
         JButton botonEnviar = new JButton("Enviar Respuesta");
-
 
         JPanel panelCentral = new JPanel();
         panelCentral.setLayout(new GridLayout(2, 1));
         panelCentral.add(preguntaLabel);
         panelCentral.add(respuestaField);
 
-
         add(panelCentral, BorderLayout.CENTER);
         add(botonEnviar, BorderLayout.SOUTH);
 
-
         conectarBaseDatos();
-
 
         botonEnviar.addActionListener(new ActionListener() {
             @Override
@@ -73,12 +69,12 @@ public class EncuestaApp extends JFrame {
         }
     }
 
-
     private void guardarRespuesta() {
         String respuesta = respuestaField.getText();
 
         if (!respuesta.isEmpty()) {
             try {
+                // Guardar la respuesta en la base de datos
                 String consulta = "INSERT INTO respuestas (pregunta, respuesta) VALUES (?, ?)";
                 PreparedStatement statement = conexion.prepareStatement(consulta);
                 statement.setString(1, preguntas[preguntaActual]);
@@ -86,6 +82,9 @@ public class EncuestaApp extends JFrame {
 
                 statement.executeUpdate();
                 System.out.println("Respuesta insertada correctamente");
+
+                // Almacenar la respuesta en la lista de respuestas del usuario
+                respuestasUsuario.add(respuesta);
 
                 // Limpiar el campo de texto
                 respuestaField.setText("");
@@ -96,7 +95,7 @@ public class EncuestaApp extends JFrame {
                 if (preguntaActual < preguntas.length) {
                     preguntaLabel.setText(preguntas[preguntaActual]);
                 } else {
-                    JOptionPane.showMessageDialog(this, "¡Encuesta completada! Gracias por participar.");
+                    mostrarRespuestas();
                     desconectarBaseDatos();
                     System.exit(0);
                 }
@@ -109,6 +108,14 @@ public class EncuestaApp extends JFrame {
         }
     }
 
+    // Mostrar respuestas al final de la encuesta
+    private void mostrarRespuestas() {
+        StringBuilder mensaje = new StringBuilder("Respuestas ingresadas:\n");
+        for (int i = 0; i < preguntas.length; i++) {
+            mensaje.append(preguntas[i]).append(": ").append(respuestasUsuario.get(i)).append("\n");
+        }
+        JOptionPane.showMessageDialog(this, mensaje.toString());
+    }
 
     private void desconectarBaseDatos() {
         try {
@@ -120,7 +127,6 @@ public class EncuestaApp extends JFrame {
             e.printStackTrace();
         }
     }
-
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(new Runnable() {
